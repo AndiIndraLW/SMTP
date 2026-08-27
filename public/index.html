@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bulk Email Campaign Dashboard</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="top-header">
+      <div class="brand">
+        <span class="logo-icon">✉️</span>
+        <div>
+          <h1>Email Campaign Dashboard</h1>
+          <span class="version">v1.0.0 · Local Express Server</span>
+        </div>
+      </div>
+      <div class="status-container">
+        <div id="statusBadge" class="status-pill status-idle">
+          <span class="dot"></span>
+          <span id="statusText">Idle</span>
+        </div>
+        <span id="serverUrl" class="server-tag">http://localhost:3000</span>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="main-content">
+      <!-- Left Column: Controls & Configuration -->
+      <section class="left-column">
+        
+        <!-- Tab Navigation -->
+        <div class="tab-bar">
+          <button class="tab-btn active" data-tab="config">⚙️ SMTP & Campaign</button>
+          <button class="tab-btn" data-tab="recipients">👥 Recipients & Uploads</button>
+        </div>
+
+        <!-- Tab 1: Configuration -->
+        <div id="tab-config" class="tab-pane active glass-card">
+          <h2 class="pane-title">Sender & SMTP Settings</h2>
+
+          <!-- SMTP Accordion / Fields -->
+          <div class="form-grid-2">
+            <div class="field">
+              <label for="smtpHost">SMTP Host</label>
+              <input type="text" id="smtpHost" placeholder="smtp.hostinger.com" />
+            </div>
+            <div class="field">
+              <label for="smtpPort">Port</label>
+              <input type="number" id="smtpPort" placeholder="465" />
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="field">
+              <label for="smtpUser">SMTP Username</label>
+              <input type="text" id="smtpUser" placeholder="you@domain.com" />
+            </div>
+            <div class="field">
+              <label for="smtpPass">SMTP Password</label>
+              <input type="password" id="smtpPass" placeholder="••••••••••••" />
+            </div>
+          </div>
+
+          <div class="field-toggle">
+            <label for="smtpSecure">Enable SSL/TLS (Port 465)</label>
+            <input type="checkbox" id="smtpSecure" checked />
+          </div>
+
+          <hr class="divider" />
+
+          <h2 class="pane-title">Sender Identity</h2>
+          <div class="form-grid-2">
+            <div class="field">
+              <label for="fromName">From Name</label>
+              <input type="text" id="fromName" placeholder="Acme Corp" />
+            </div>
+            <div class="field">
+              <label for="fromEmail">From Email</label>
+              <input type="email" id="fromEmail" placeholder="you@domain.com" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="replyTo">Reply-To (Optional)</label>
+            <input type="email" id="replyTo" placeholder="support@domain.com" />
+          </div>
+
+          <hr class="divider" />
+
+          <h2 class="pane-title">Batch & Rate Limiting</h2>
+          <div class="form-grid-2">
+            <div class="field">
+              <label for="batchSize">Batch Size (emails)</label>
+              <input type="number" id="batchSize" value="100" min="1" />
+            </div>
+            <div class="field">
+              <label for="batchDelayMin">Pause Between Batches (minutes)</label>
+              <input type="number" id="batchDelayMin" value="30" min="0" />
+            </div>
+          </div>
+
+          <div class="form-grid-2" style="margin-top: 10px;">
+            <div class="field">
+              <label for="jitterMinMs">Min Jitter (ms)</label>
+              <input type="number" id="jitterMinMs" value="500" min="100" />
+            </div>
+            <div class="field">
+              <label for="jitterMaxMs">Max Jitter (ms)</label>
+              <input type="number" id="jitterMaxMs" value="1200" min="200" />
+            </div>
+          </div>
+
+          <button id="saveConfigBtn" class="btn btn-secondary" style="width: 100%; margin-top: 16px;">
+            💾 Save Settings
+          </button>
+        </div>
+
+        <!-- Tab 2: Recipients & Uploads -->
+        <div id="tab-recipients" class="tab-pane glass-card">
+          <h2 class="pane-title">Contact List (.CSV)</h2>
+          <div class="drop-zone" id="csvDropZone">
+            <span class="drop-icon">📄</span>
+            <p>Drag & Drop your <strong>contacts.csv</strong> file here</p>
+            <span class="subtext">Must contain headers: <code>email</code>, <code>name</code></span>
+            <input type="file" id="csvFileInput" accept=".csv" hidden />
+            <button type="button" class="btn btn-outline" id="browseCsvBtn">Browse File</button>
+          </div>
+
+          <div id="csvStats" class="stats-box" style="display: none;">
+            <div class="stat-pill success">
+              <span class="val" id="validCount">0</span>
+              <span class="lbl">Valid Contacts</span>
+            </div>
+            <div class="stat-pill warning">
+              <span class="val" id="rejectedCount">0</span>
+              <span class="lbl">Skipped/Invalid</span>
+            </div>
+          </div>
+
+          <hr class="divider" />
+
+          <h2 class="pane-title">Email Attachments (PDF, Images, Docs)</h2>
+          <div class="drop-zone" id="attachmentDropZone">
+            <span class="drop-icon">📎</span>
+            <p>Drag & Drop files to attach to outgoing emails</p>
+            <input type="file" id="attachmentInput" multiple hidden />
+            <button type="button" class="btn btn-outline" id="browseAttachmentBtn">Browse Files</button>
+          </div>
+
+          <ul id="attachmentList" class="file-list"></ul>
+          <button type="button" id="clearAttachmentsBtn" class="btn btn-ghost" style="display: none; margin-top: 8px;">
+            🗑️ Clear Attachments
+          </button>
+        </div>
+
+      </section>
+
+      <!-- Right Column: Split Screen HTML Editor & Live Preview -->
+      <section class="right-column glass-card">
+        
+        <!-- Editor Controls Header -->
+        <div class="editor-header">
+          <div class="subject-bar">
+            <label for="mailSubject">Subject:</label>
+            <input type="text" id="mailSubject" placeholder="Hey {{firstname}}, here's your update!" />
+          </div>
+          <div class="tag-chips">
+            <span class="chip" data-tag="{{name}}">{{name}}</span>
+            <span class="chip" data-tag="{{firstname}}">{{firstname}}</span>
+            <span class="chip" data-tag="{{email}}">{{email}}</span>
+            <span class="chip" data-tag="{{date}}">{{date}}</span>
+            <span class="chip" data-tag="{{year}}">{{year}}</span>
+          </div>
+        </div>
+
+        <!-- Split Screen Container -->
+        <div class="split-screen">
+          <!-- Left: HTML Code Editor -->
+          <div class="editor-pane">
+            <div class="pane-bar">
+              <span>HTML Source Code</span>
+              <button id="formatBtn" class="btn-xs">Refreshed</button>
+            </div>
+            <textarea id="htmlEditor" class="code-editor" placeholder="Write or paste your template HTML code here..."></textarea>
+          </div>
+
+          <!-- Right: Live Preview Iframe -->
+          <div class="preview-pane">
+            <div class="pane-bar">
+              <span>Live Rendered Preview</span>
+              <span class="sample-tag" id="sampleTag">Sample: Alice Johnson &lt;alice@example.com&gt;</span>
+            </div>
+            <iframe id="previewIframe" title="Live Email Preview"></iframe>
+          </div>
+        </div>
+
+        <!-- Dashboard Execution Controls & Real-Time Progress -->
+        <div class="execution-bar">
+          
+          <!-- Progress Stats -->
+          <div class="progress-section">
+            <div class="progress-info">
+              <span id="progressText">Sent: 0 / 0</span>
+              <span id="progressPct" class="pct">0%</span>
+            </div>
+            <div class="progress-track">
+              <div id="progressBarFill" class="progress-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <button id="startBtn" class="btn btn-primary btn-lg">🚀 Start Campaign</button>
+            <button id="pauseBtn" class="btn btn-danger btn-lg" disabled>⏸️ Pause</button>
+            <button id="reportBtn" class="btn btn-outline btn-lg">📊 Download CSV Report</button>
+          </div>
+        </div>
+
+        <!-- Terminal Log Window -->
+        <div class="log-section">
+          <div class="log-bar">
+            <span>Live Delivery Terminal</span>
+            <button id="clearLogsBtn" class="btn-xs">Clear Log</button>
+          </div>
+          <div id="terminalLog" class="terminal-body">
+            <div class="log-line info">
+              <span class="time">[00:00:00]</span> Server ready. Upload contacts and click Start Campaign.
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

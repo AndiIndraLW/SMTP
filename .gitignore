@@ -1,0 +1,7 @@
+node_modules/
+.env
+uploads/
+campaign_report.csv
+progress.json
+preview.html
+*.log

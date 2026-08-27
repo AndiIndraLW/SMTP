@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{subject}}</title>
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td           { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img                 { -ms-interpolation-mode: bicubic; border: 0; }
+    body                { margin: 0 !important; padding: 0 !important; background-color: #f0f4f8; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+    @media screen and (max-width: 600px) {
+      .wrapper  { width: 100% !important; }
+      .pad-body { padding: 28px 20px !important; }
+      h1        { font-size: 24px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f4f8;">
+
+  <!-- Hidden preheader (inbox snippet text) -->
+  <div style="display:none;font-size:1px;max-height:0;overflow:hidden;color:#f0f4f8;">
+    Hi {{firstname}} — we have something special for you. 🎉
+  </div>
+
+  <!-- Outer wrapper -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+         style="background:#f0f4f8;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+
+        <!-- Email card (max 600px) -->
+        <table role="presentation" class="wrapper" width="600" cellpadding="0" cellspacing="0"
+               style="background:#ffffff;border-radius:18px;overflow:hidden;
+                      box-shadow:0 4px 30px rgba(0,0,0,0.09);">
+
+          <!-- ═══ HEADER ═══════════════════════════════════════════ -->
+          <tr>
+            <td align="center"
+                style="background:linear-gradient(135deg,#6d28d9 0%,#4f46e5 100%);
+                       padding:52px 40px 44px;">
+              <!-- Brand mark -->
+              <div style="width:56px;height:56px;border-radius:50%;
+                          background:rgba(255,255,255,0.18);
+                          line-height:56px;font-size:26px;text-align:center;
+                          margin:0 auto 22px;">✉️</div>
+
+              <h1 style="color:#ffffff;font-size:30px;font-weight:800;
+                         line-height:1.25;margin:0 0 12px;
+                         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+                Hey {{firstname}}, 👋
+              </h1>
+              <p style="color:rgba(255,255,255,0.85);font-size:16px;
+                        line-height:1.55;margin:0;
+                        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+                We've been working on something just for you.
+              </p>
+            </td>
+          </tr>
+
+          <!-- ═══ BODY ══════════════════════════════════════════════ -->
+          <tr>
+            <td class="pad-body"
+                style="padding:44px 48px;
+                       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+
+              <p style="color:#374151;font-size:16px;line-height:1.75;margin:0 0 18px;">
+                Dear <strong>{{name}}</strong>,
+              </p>
+              <p style="color:#374151;font-size:16px;line-height:1.75;margin:0 0 18px;">
+                Thank you for being a valued member of our community. We have crafted
+                this message specifically for you on <strong>{{date}}</strong> — and we
+                hope you love what we've built.
+              </p>
+              <p style="color:#6b7280;font-size:14px;line-height:1.7;margin:0 0 32px;">
+                Sent to: <em>{{email}}</em>
+              </p>
+
+              <!-- Feature highlight card -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                     style="margin-bottom:34px;">
+                <tr>
+                  <td style="background:#f9fafb;border-radius:14px;padding:26px;">
+                    <!-- Feature 1 -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td width="40" valign="top" style="font-size:22px;padding-right:14px;">🚀</td>
+                        <td valign="top">
+                          <p style="color:#111827;font-size:15px;font-weight:700;margin:0 0 4px;">
+                            Exclusive Access
+                          </p>
+                          <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0;">
+                            Get early access before anyone else — no waitlist required.
+                          </p>
+                        </td>
+                      </tr>
+                      <tr><td colspan="2" style="height:18px;"></td></tr>
+                      <!-- Feature 2 -->
+                      <tr>
+                        <td width="40" valign="top" style="font-size:22px;padding-right:14px;">🎁</td>
+                        <td valign="top">
+                          <p style="color:#111827;font-size:15px;font-weight:700;margin:0 0 4px;">
+                            A Gift For You
+                          </p>
+                          <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0;">
+                            We've included a special offer just for {{firstname}}.
+                          </p>
+                        </td>
+                      </tr>
+                      <tr><td colspan="2" style="height:18px;"></td></tr>
+                      <!-- Feature 3 -->
+                      <tr>
+                        <td width="40" valign="top" style="font-size:22px;padding-right:14px;">💬</td>
+                        <td valign="top">
+                          <p style="color:#111827;font-size:15px;font-weight:700;margin:0 0 4px;">
+                            Priority Support
+                          </p>
+                          <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0;">
+                            Our team is ready to help you 24/7 — just reply to this email.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                     style="margin-bottom:34px;">
+                <tr>
+                  <td align="center">
+                    <a href="https://example.com/claim?ref={{email}}"
+                       style="display:inline-block;
+                              background:linear-gradient(135deg,#6d28d9,#4f46e5);
+                              color:#ffffff;font-size:16px;font-weight:700;
+                              text-decoration:none;padding:16px 44px;
+                              border-radius:50px;letter-spacing:.3px;
+                              box-shadow:0 4px 18px rgba(109,40,217,0.4);">
+                      Claim Your Offer →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color:#9ca3af;font-size:13px;line-height:1.7;margin:0;">
+                If the button doesn't work, copy this link into your browser:<br />
+                <a href="https://example.com" style="color:#6d28d9;">https://example.com</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- ═══ FOOTER ════════════════════════════════════════════ -->
+          <tr>
+            <td style="background:#f9fafb;border-top:1px solid #e5e7eb;
+                       padding:28px 48px;text-align:center;
+                       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+              <p style="color:#9ca3af;font-size:12px;line-height:1.7;margin:0 0 8px;">
+                You're receiving this because you're a valued member of our community.
+              </p>
+              <p style="color:#9ca3af;font-size:12px;margin:0;">
+                © {{year}} YourCompany Inc. &nbsp;·&nbsp;
+                <a href="https://example.com/unsubscribe?e={{email}}"
+                   style="color:#6d28d9;">Unsubscribe</a>
+                &nbsp;·&nbsp;
+                <a href="https://example.com/privacy"
+                   style="color:#6d28d9;">Privacy Policy</a>
+              </p>
+            </td>
+          </tr>
+
+        </table><!-- /email card -->
+
+      </td>
+    </tr>
+  </table><!-- /outer wrapper -->
+
+</body>
+</html>

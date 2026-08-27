@@ -1,0 +1,14 @@
+email,name
+alice.johnson@example.com,Alice Johnson
+bob.smith@example.com,Bob Smith
+clara.rossi@example.com,Clara Rossi
+david.kim@example.com,
+eva.martinez@example.com,Eva Martinez
+grace.chen@example.org,Grace Chen
+hana.tanaka@example.jp,Hana Tanaka
+alice.johnson@example.com,Alice Johnson Duplicate
+not-an-email,Frank Lee
+frank@,Invalid Format
+,Missing Email
+liam.nguyen@example.com,Liam Nguyen
+sophie.dubois@example.fr,Sophie Dubois

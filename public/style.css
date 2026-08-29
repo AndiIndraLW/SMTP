@@ -331,8 +331,56 @@ body {
 
 .stat-pill.success .val { color: var(--success); }
 .stat-pill.warning .val { color: var(--warning); }
+.stat-pill.danger .val { color: #f87171; }
 .stat-pill .val { font-size: 18px; font-weight: 700; display: block; }
 .stat-pill .lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+
+.breakdown-box {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.breakdown-section {
+  background: rgba(8, 12, 20, 0.5);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.breakdown-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.text-warning { color: var(--warning); }
+.text-danger { color: #f87171; }
+
+.breakdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 120px;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+.breakdown-list li {
+  padding: 4px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  display: flex;
+  justify-content: space-between;
+}
+
+.breakdown-list li:last-child {
+  border-bottom: none;
+}
 
 .file-list {
   list-style: none;

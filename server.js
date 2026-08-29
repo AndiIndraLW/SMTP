@@ -73,6 +73,13 @@ const campaignState = {
         <h2>Hello {{firstname}},</h2>
         <p>Thank you for being a valued client!</p>
        </div>`,
+  csvStats: {
+    validCount: 0,
+    duplicateCount: 0,
+    invalidCount: 0,
+    duplicateItems: [],
+    invalidItems: [],
+  },
   sentCount: 0,
   failedCount: 0,
   currentIndex: 0,
@@ -171,6 +178,7 @@ app.get('/api/state', (req, res) => {
     config: campaignState.config,
     htmlTemplate: campaignState.htmlTemplate,
     contactsCount: campaignState.contacts.length,
+    csvStats: campaignState.csvStats,
     attachments: campaignState.attachments.map((a) => ({ name: a.originalname, size: a.size })),
     status: campaignState.status,
     sentCount: campaignState.sentCount,
@@ -191,7 +199,8 @@ app.post('/api/upload-csv', upload.single('csvFile'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No CSV file uploaded.' })
 
   const valid = []
-  const rejected = []
+  const duplicates = []
+  const invalid = []
   const seen = new Set()
 
   fs.createReadStream(req.file.path)
@@ -205,11 +214,11 @@ app.post('/api/upload-csv', upload.single('csvFile'), (req, res) => {
       const name = (row.name || '').trim()
 
       if (!isValidEmail(email)) {
-        rejected.push({ email: row.email || '(empty)', reason: 'Invalid syntax' })
+        invalid.push({ email: row.email || '(empty)', name, reason: 'Invalid email syntax' })
         return
       }
       if (seen.has(email)) {
-        rejected.push({ email, reason: 'Duplicate' })
+        duplicates.push({ email, name, reason: 'Duplicate email' })
         return
       }
       seen.add(email)
@@ -223,15 +232,24 @@ app.post('/api/upload-csv', upload.single('csvFile'), (req, res) => {
       campaignState.currentIndex = 0
       campaignState.sentCount = 0
       campaignState.failedCount = 0
+      campaignState.csvStats = {
+        validCount: valid.length,
+        duplicateCount: duplicates.length,
+        invalidCount: invalid.length,
+        duplicateItems: duplicates,
+        invalidItems: invalid,
+      }
 
-      addLog('info', `📂 Uploaded CSV: ${valid.length} valid contacts, ${rejected.length} skipped.`)
+      addLog('info', `📂 Uploaded CSV: ${valid.length} valid contacts | ⚠️ ${duplicates.length} duplicates skipped | ❌ ${invalid.length} invalid emails skipped.`)
       updateProgress()
 
       res.json({
         success: true,
         validCount: valid.length,
-        rejectedCount: rejected.length,
-        rejectedSamples: rejected.slice(0, 5),
+        duplicateCount: duplicates.length,
+        invalidCount: invalid.length,
+        duplicateItems: duplicates,
+        invalidItems: invalid,
       })
     })
     .on('error', (err) => {

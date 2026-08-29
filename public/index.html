@@ -139,8 +139,23 @@
               <span class="lbl">Valid Contacts</span>
             </div>
             <div class="stat-pill warning">
-              <span class="val" id="rejectedCount">0</span>
-              <span class="lbl">Skipped/Invalid</span>
+              <span class="val" id="duplicateCount">0</span>
+              <span class="lbl">Duplicates Skipped</span>
+            </div>
+            <div class="stat-pill danger">
+              <span class="val" id="invalidCount">0</span>
+              <span class="lbl">Invalid Syntax</span>
+            </div>
+          </div>
+
+          <div id="csvBreakdown" class="breakdown-box" style="display: none;">
+            <div id="duplicateListContainer" class="breakdown-section" style="display: none;">
+              <h4 class="breakdown-title text-warning">⚠️ Duplicated Emails (<span id="dupCountLabel">0</span>)</h4>
+              <ul id="duplicateList" class="breakdown-list"></ul>
+            </div>
+            <div id="invalidListContainer" class="breakdown-section" style="display: none;">
+              <h4 class="breakdown-title text-danger">❌ Invalid Syntax Emails (<span id="invCountLabel">0</span>)</h4>
+              <ul id="invalidList" class="breakdown-list"></ul>
             </div>
           </div>
 

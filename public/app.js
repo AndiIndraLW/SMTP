@@ -38,7 +38,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const browseCsvBtn = document.getElementById('browseCsvBtn')
   const csvStats = document.getElementById('csvStats')
   const validCount = document.getElementById('validCount')
-  const rejectedCount = document.getElementById('rejectedCount')
+  const duplicateCount = document.getElementById('duplicateCount')
+  const invalidCount = document.getElementById('invalidCount')
+  const csvBreakdown = document.getElementById('csvBreakdown')
+  const duplicateListContainer = document.getElementById('duplicateListContainer')
+  const invalidListContainer = document.getElementById('invalidListContainer')
+  const dupCountLabel = document.getElementById('dupCountLabel')
+  const invCountLabel = document.getElementById('invCountLabel')
+  const duplicateList = document.getElementById('duplicateList')
+  const invalidList = document.getElementById('invalidList')
 
   const attachmentDropZone = document.getElementById('attachmentDropZone')
   const attachmentInput = document.getElementById('attachmentInput')
@@ -96,7 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
       mailSubject.value = cfg.subject || ''
       htmlEditor.value = data.htmlTemplate || ''
 
-      if (data.contactsCount > 0) {
+      if (data.csvStats) {
+        renderCsvBreakdown(data.csvStats)
+      } else if (data.contactsCount > 0) {
         csvStats.style.display = 'flex'
         validCount.textContent = data.contactsCount
       }
@@ -160,12 +170,47 @@ document.addEventListener('DOMContentLoaded', () => {
       .then((res) => res.json())
       .then((data) => {
         if (data.error) return alert(data.error)
-        csvStats.style.display = 'flex'
-        validCount.textContent = data.validCount
-        rejectedCount.textContent = data.rejectedCount
+        renderCsvBreakdown(data)
         updatePreview()
       })
       .catch((err) => alert(`Upload failed: ${err.message}`))
+  }
+
+  function renderCsvBreakdown(stats) {
+    if (!stats) return
+    csvStats.style.display = 'flex'
+    validCount.textContent = stats.validCount || 0
+    duplicateCount.textContent = stats.duplicateCount || 0
+    invalidCount.textContent = stats.invalidCount || 0
+
+    const duplicates = stats.duplicateItems || []
+    const invalid = stats.invalidItems || []
+
+    if (duplicates.length > 0 || invalid.length > 0) {
+      csvBreakdown.style.display = 'flex'
+    } else {
+      csvBreakdown.style.display = 'none'
+    }
+
+    if (duplicates.length > 0) {
+      duplicateListContainer.style.display = 'block'
+      dupCountLabel.textContent = duplicates.length
+      duplicateList.innerHTML = duplicates
+        .map((item) => `<li><span>${item.email}</span> <span class="text-warning">Duplicate</span></li>`)
+        .join('')
+    } else {
+      duplicateListContainer.style.display = 'none'
+    }
+
+    if (invalid.length > 0) {
+      invalidListContainer.style.display = 'block'
+      invCountLabel.textContent = invalid.length
+      invalidList.innerHTML = invalid
+        .map((item) => `<li><span>${item.email}</span> <span class="text-danger">Invalid Syntax</span></li>`)
+        .join('')
+    } else {
+      invalidListContainer.style.display = 'none'
+    }
   }
 
   // ── Attachment Upload Handlers ──────────────────────────────────

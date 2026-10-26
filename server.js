@@ -31,6 +31,7 @@ const UPLOADS_DIR = path.join(__dirname, 'uploads')
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true })
 
 const REPORT_PATH = path.join(__dirname, 'campaign_report.csv')
+const SENT_EMAILS_PATH = path.join(__dirname, 'sent_emails_db.json')
 
 // ── Middleware ────────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }))
@@ -166,6 +167,51 @@ function appendReportCSV(email, name, status, errorDetails = '') {
   }
   const row = [esc(new Date().toISOString()), esc(email), esc(name), esc(status), esc(errorDetails)].join(',') + '\n'
   fs.appendFileSync(REPORT_PATH, row, 'utf-8')
+}
+
+// ── Persistent Sent Emails Store Helpers ──────────────────────────
+function loadSentEmailsDB() {
+  try {
+    if (fs.existsSync(SENT_EMAILS_PATH)) {
+      const data = fs.readFileSync(SENT_EMAILS_PATH, 'utf-8')
+      return JSON.parse(data)
+    }
+  } catch (err) {
+    console.error('Error reading sent_emails_db.json:', err)
+  }
+  return []
+}
+
+function saveSentEmailsDB(emails) {
+  try {
+    fs.writeFileSync(SENT_EMAILS_PATH, JSON.stringify(emails, null, 2), 'utf-8')
+  } catch (err) {
+    console.error('Error writing sent_emails_db.json:', err)
+  }
+}
+
+function recordSentEmail({ email, name, subject, status, errorDetails = '', html = '', attachments = [] }) {
+  const emails = loadSentEmailsDB()
+  const now = new Date()
+  const record = {
+    id: Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+    timestamp: now.toISOString(),
+    year: now.getFullYear(),
+    month: now.getMonth() + 1, // 1-12
+    day: now.getDate(), // 1-31
+    time: now.toLocaleTimeString('en-US', { hour12: false }),
+    email,
+    name: name || '',
+    subject: subject || '',
+    status, // 'SENT' | 'FAILED'
+    errorDetails,
+    html: html || '',
+    attachments: (attachments || []).map((a) => ({ filename: a.filename || a.originalname || 'attachment' })),
+  }
+  emails.unshift(record) // Newest first
+  saveSentEmailsDB(emails)
+  broadcast('email_sent', record)
+  return record
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -370,6 +416,78 @@ app.get('/api/campaign/report', (req, res) => {
   res.download(REPORT_PATH, 'campaign_report.csv')
 })
 
+// 9. Sent Emails History & Filtering
+app.get('/api/sent-emails', (req, res) => {
+  const { day, month, year, search, today } = req.query
+  const allEmails = loadSentEmailsDB()
+
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() + 1
+  const currentDay = now.getDate()
+
+  // Dynamic filter options
+  const availableYears = Array.from(new Set(allEmails.map((e) => e.year))).sort((a, b) => b - a)
+  const availableMonths = Array.from(new Set(allEmails.map((e) => e.month))).sort((a, b) => a - b)
+  const availableDays = Array.from(new Set(allEmails.map((e) => e.day))).sort((a, b) => a - b)
+
+  let filtered = allEmails
+
+  if (today === 'true') {
+    filtered = filtered.filter(
+      (e) => Number(e.year) === currentYear && Number(e.month) === currentMonth && Number(e.day) === currentDay
+    )
+  } else {
+    if (year && year !== 'all') {
+      filtered = filtered.filter((e) => String(e.year) === String(year))
+    }
+    if (month && month !== 'all') {
+      filtered = filtered.filter((e) => String(e.month) === String(month))
+    }
+    if (day && day !== 'all') {
+      filtered = filtered.filter((e) => String(e.day) === String(day))
+    }
+  }
+
+  if (search && search.trim() !== '') {
+    const q = search.trim().toLowerCase()
+    filtered = filtered.filter(
+      (e) =>
+        e.email.toLowerCase().includes(q) ||
+        (e.name && e.name.toLowerCase().includes(q)) ||
+        (e.subject && e.subject.toLowerCase().includes(q))
+    )
+  }
+
+  const totalCount = filtered.length
+  const sentCount = filtered.filter((e) => e.status === 'SENT').length
+  const failedCount = filtered.filter((e) => e.status === 'FAILED').length
+  const successRate = totalCount > 0 ? Math.round((sentCount / totalCount) * 100) : 0
+
+  res.json({
+    emails: filtered,
+    stats: {
+      totalCount,
+      sentCount,
+      failedCount,
+      successRate,
+      grandTotalCount: allEmails.length,
+    },
+    availableFilters: {
+      years: availableYears,
+      months: availableMonths,
+      days: availableDays,
+    },
+  })
+})
+
+// Clear sent emails history
+app.post('/api/sent-emails/clear', (req, res) => {
+  saveSentEmailsDB([])
+  addLog('info', '🗑️ Sent emails history cleared.')
+  res.json({ success: true })
+})
+
 // ══════════════════════════════════════════════════════════════════
 // QUEUE ENGINE
 // ══════════════════════════════════════════════════════════════════
@@ -437,10 +555,12 @@ async function runSendingQueue() {
       campaignState.sentCount++
       addLog('success', `SENT → ${contact.email}`, { email: contact.email })
       appendReportCSV(contact.email, contact.name || '', 'SENT')
+      recordSentEmail({ email: contact.email, name: contact.name, subject, status: 'SENT', html, attachments: campaignState.attachments })
     } catch (err) {
       campaignState.failedCount++
       addLog('error', `FAILED → ${contact.email}: ${err.message}`, { email: contact.email })
       appendReportCSV(contact.email, contact.name || '', 'FAILED', err.message)
+      recordSentEmail({ email: contact.email, name: contact.name, subject, status: 'FAILED', errorDetails: err.message, html, attachments: campaignState.attachments })
     }
 
     campaignState.currentIndex++

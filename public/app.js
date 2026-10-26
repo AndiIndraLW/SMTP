@@ -80,6 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active')
       const targetPane = document.getElementById(`tab-${btn.dataset.tab}`)
       if (targetPane) targetPane.classList.add('active')
+      if (btn.dataset.tab === 'sent') {
+        loadSentEmails()
+      }
     })
   })
 
@@ -334,6 +337,11 @@ document.addEventListener('DOMContentLoaded', () => {
     appendLog(data)
   })
 
+  sse.addEventListener('email_sent', (e) => {
+    // Live update sent table if currently visible or active
+    loadSentEmails()
+  })
+
   function updateStatus(status) {
     statusBadge.className = `status-pill status-${status}`
     statusText.textContent = status.charAt(0).toUpperCase() + status.slice(1)
@@ -384,4 +392,300 @@ document.addEventListener('DOMContentLoaded', () => {
   reportBtn.addEventListener('click', () => {
     window.location.href = '/api/campaign/report'
   })
+
+  // ── Email Sent Tab Engine ───────────────────────────────────────
+  const sentStatTotal = document.getElementById('sentStatTotal')
+  const sentStatSuccess = document.getElementById('sentStatSuccess')
+  const sentStatFailed = document.getElementById('sentStatFailed')
+  const sentStatRate = document.getElementById('sentStatRate')
+
+  const filterYear = document.getElementById('filterYear')
+  const filterMonth = document.getElementById('filterMonth')
+  const filterDay = document.getElementById('filterDay')
+  const filterSearch = document.getElementById('filterSearch')
+  const filterTodayBtn = document.getElementById('filterTodayBtn')
+  const resetFiltersBtn = document.getElementById('resetFiltersBtn')
+  const clearHistoryBtn = document.getElementById('clearHistoryBtn')
+  const sentTableBody = document.getElementById('sentTableBody')
+
+  let isTodayFilterActive = false
+
+  function loadSentEmails() {
+    if (!sentTableBody) return
+
+    const search = (filterSearch.value || '').trim()
+    const params = new URLSearchParams()
+
+    if (isTodayFilterActive) {
+      params.append('today', 'true')
+    } else {
+      params.append('year', filterYear.value || 'all')
+      params.append('month', filterMonth.value || 'all')
+      params.append('day', filterDay.value || 'all')
+    }
+    if (search) params.append('search', search)
+
+    fetch(`/api/sent-emails?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        updateSentStats(data.stats)
+        updateFilterDropdowns(data.availableFilters)
+        renderSentTable(data.emails)
+      })
+      .catch((err) => console.error('Error fetching sent emails:', err))
+  }
+
+  function updateSentStats(stats = {}) {
+    if (!sentStatTotal) return
+    sentStatTotal.textContent = stats.totalCount || 0
+    sentStatSuccess.textContent = stats.sentCount || 0
+    sentStatFailed.textContent = stats.failedCount || 0
+    sentStatRate.textContent = `${stats.successRate || 0}%`
+  }
+
+  function updateFilterDropdowns(filters = {}) {
+    if (!filterYear || !filterDay) return
+
+    // Update Year Options
+    const currentYearVal = filterYear.value
+    filterYear.innerHTML = '<option value="all">All Years</option>'
+    ;(filters.years || []).forEach((y) => {
+      const opt = document.createElement('option')
+      opt.value = y
+      opt.textContent = y
+      if (String(y) === currentYearVal) opt.selected = true
+      filterYear.appendChild(opt)
+    })
+
+    // Update Day Options
+    const currentDayVal = filterDay.value
+    filterDay.innerHTML = '<option value="all">All Days</option>'
+    ;(filters.days || []).forEach((d) => {
+      const opt = document.createElement('option')
+      opt.value = d
+      opt.textContent = `Day ${d}`
+      if (String(d) === currentDayVal) opt.selected = true
+      filterDay.appendChild(opt)
+    })
+  }
+
+  // Map cache for sent email detail lookup
+  let currentSentEmailsMap = new Map()
+
+  // Modal DOM References
+  const emailDetailModal = document.getElementById('emailDetailModal')
+  const closeModalBtn = document.getElementById('closeModalBtn')
+  const modalSubject = document.getElementById('modalSubject')
+  const modalStatusBadge = document.getElementById('modalStatusBadge')
+  const modalDate = document.getElementById('modalDate')
+  const modalRecipient = document.getElementById('modalRecipient')
+  const modalRecipientName = document.getElementById('modalRecipientName')
+  const modalAttachmentsSection = document.getElementById('modalAttachmentsSection')
+  const modalAttachmentsList = document.getElementById('modalAttachmentsList')
+  const modalErrorSection = document.getElementById('modalErrorSection')
+  const modalErrorMsg = document.getElementById('modalErrorMsg')
+  const modalBodyIframe = document.getElementById('modalBodyIframe')
+
+  function renderSentTable(emails = []) {
+    if (!sentTableBody) return
+
+    currentSentEmailsMap.clear()
+
+    if (emails.length === 0) {
+      sentTableBody.innerHTML = `<tr><td colspan="5" class="empty-row">No sent emails recorded for this filter.</td></tr>`
+      return
+    }
+
+    sentTableBody.innerHTML = emails
+      .map((item) => {
+        currentSentEmailsMap.set(item.id, item)
+        const isSent = item.status === 'SENT'
+        const badgeClass = isSent ? 'badge-sent' : 'badge-failed'
+        const dateStr = item.timestamp
+          ? new Date(item.timestamp).toLocaleString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            })
+          : `${item.year}-${item.month}-${item.day} ${item.time || ''}`
+
+        return `
+        <tr data-id="${item.id}" title="Click to view full email details">
+          <td><span class="${badgeClass}">${item.status}</span></td>
+          <td><strong>${escapeHtml(item.email)}</strong></td>
+          <td>${escapeHtml(item.name || '-')}</td>
+          <td>${escapeHtml(item.subject || '-')}</td>
+          <td style="color: var(--text-dim); font-size: 11px;">${escapeHtml(dateStr)}</td>
+        </tr>
+      `
+      })
+      .join('')
+  }
+
+  // Row click event delegator to open detail modal
+  if (sentTableBody) {
+    sentTableBody.addEventListener('click', (e) => {
+      const row = e.target.closest('tr[data-id]')
+      if (!row) return
+      const emailId = row.dataset.id
+      const item = currentSentEmailsMap.get(emailId)
+      if (item) {
+        openEmailDetailModal(item)
+      }
+    })
+  }
+
+  function openEmailDetailModal(item) {
+    if (!emailDetailModal) return
+
+    const isSent = item.status === 'SENT'
+    modalStatusBadge.className = isSent ? 'badge-sent' : 'badge-failed'
+    modalStatusBadge.textContent = item.status
+
+    modalSubject.textContent = item.subject || '(No Subject)'
+
+    const dateStr = item.timestamp
+      ? new Date(item.timestamp).toLocaleString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })
+      : `${item.year}-${item.month}-${item.day} ${item.time || ''}`
+    modalDate.textContent = `Sent at ${dateStr}`
+
+    modalRecipient.textContent = item.email || '-'
+    modalRecipientName.textContent = item.name || '-'
+
+    // Attachments section
+    if (item.attachments && item.attachments.length > 0) {
+      modalAttachmentsSection.style.display = 'block'
+      modalAttachmentsList.innerHTML = item.attachments
+        .map(
+          (a) => `<span class="attachment-chip">📄 ${escapeHtml(a.filename || a.originalname || 'attachment')}</span>`
+        )
+        .join('')
+    } else {
+      modalAttachmentsSection.style.display = 'none'
+      modalAttachmentsList.innerHTML = ''
+    }
+
+    // Error details section
+    if (!isSent && item.errorDetails) {
+      modalErrorSection.style.display = 'block'
+      modalErrorMsg.textContent = item.errorDetails
+    } else {
+      modalErrorSection.style.display = 'none'
+      modalErrorMsg.textContent = ''
+    }
+
+    // HTML Body frame
+    const bodyHtml =
+      item.html ||
+      `<div style="font-family: sans-serif; padding: 20px; color: #666;">No HTML content recorded for this email.</div>`
+    modalBodyIframe.srcdoc = bodyHtml
+
+    // Show native dialog modal
+    emailDetailModal.showModal()
+  }
+
+  // Modal Close Handlers
+  if (closeModalBtn && emailDetailModal) {
+    closeModalBtn.addEventListener('click', () => emailDetailModal.close())
+  }
+
+  if (emailDetailModal) {
+    // Backdrop click dismiss
+    emailDetailModal.addEventListener('click', (e) => {
+      const rect = emailDetailModal.getBoundingClientRect()
+      const isInDialog =
+        rect.top <= e.clientY &&
+        e.clientY <= rect.top + rect.height &&
+        rect.left <= e.clientX &&
+        e.clientX <= rect.left + rect.width
+      if (!isInDialog) {
+        emailDetailModal.close()
+      }
+    })
+  }
+
+  function updateTodayBtnUI() {
+    if (!filterTodayBtn) return
+    if (isTodayFilterActive) {
+      filterTodayBtn.classList.remove('btn-secondary')
+      filterTodayBtn.classList.add('btn-primary')
+      filterTodayBtn.textContent = '📅 Today (Active)'
+    } else {
+      filterTodayBtn.classList.remove('btn-primary')
+      filterTodayBtn.classList.add('btn-secondary')
+      filterTodayBtn.textContent = '📅 Today'
+    }
+  }
+
+  // Filter Event Listeners
+  if (filterYear) {
+    filterYear.addEventListener('change', () => {
+      isTodayFilterActive = false
+      updateTodayBtnUI()
+      loadSentEmails()
+    })
+  }
+  if (filterMonth) {
+    filterMonth.addEventListener('change', () => {
+      isTodayFilterActive = false
+      updateTodayBtnUI()
+      loadSentEmails()
+    })
+  }
+  if (filterDay) {
+    filterDay.addEventListener('change', () => {
+      isTodayFilterActive = false
+      updateTodayBtnUI()
+      loadSentEmails()
+    })
+  }
+  if (filterSearch) {
+    let searchTimeout
+    filterSearch.addEventListener('input', () => {
+      clearTimeout(searchTimeout)
+      searchTimeout = setTimeout(loadSentEmails, 250)
+    })
+  }
+
+  if (filterTodayBtn) {
+    filterTodayBtn.addEventListener('click', () => {
+      isTodayFilterActive = !isTodayFilterActive
+      updateTodayBtnUI()
+      loadSentEmails()
+    })
+  }
+
+  if (resetFiltersBtn) {
+    resetFiltersBtn.addEventListener('click', () => {
+      isTodayFilterActive = false
+      filterYear.value = 'all'
+      filterMonth.value = 'all'
+      filterDay.value = 'all'
+      filterSearch.value = ''
+      updateTodayBtnUI()
+      loadSentEmails()
+    })
+  }
+
+  if (clearHistoryBtn) {
+    clearHistoryBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear all sent email logs?')) {
+        fetch('/api/sent-emails/clear', { method: 'POST' })
+          .then((res) => res.json())
+          .then(() => loadSentEmails())
+      }
+    })
+  }
 })
+
